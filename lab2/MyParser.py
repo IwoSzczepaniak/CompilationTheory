@@ -1,5 +1,7 @@
 from sly import Parser
-from MyLexer import MyLexer as Scanner
+import sys
+sys.path.append('c:/Users/iwosz/PythonProjects/CompilationTheory/') 
+from lab1.MyLexer import MyLexer as Scanner
 
 class ParserMatrix(Parser):
 
