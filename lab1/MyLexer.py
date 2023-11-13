@@ -20,7 +20,6 @@ class MyLexer(Lexer):
 
 
     ignore = ' \t'
-    # \n jest również ignorowane, ale uwzględnione osobno, by liczyć linie
 
     @_(r'#.*')
     def ignore_comment(self, t):

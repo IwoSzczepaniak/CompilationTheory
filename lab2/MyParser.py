@@ -8,14 +8,13 @@ class ParserMatrix(Parser):
     tokens = Scanner.tokens
 
     precedence = (
-        ('right', 'IF', 'ELSE'),
-        ('right', 'FOR', 'WHILE'),
-        ('left', '+', '-'),
-        ('left', '*', '/'),
-        ('left', 'DOTADD', 'DOTSUB'),
-        ('left', 'DOTMUL', 'DOTDIV'),
-        ('right', '=', 'ADDASSIGN', 'SUBASSIGN', 'MULASSIGN', 'DIVASSIGN'),
+        ('right', 'IFX'),
+        ('right', 'ELSE'),
+
         ('nonassoc', 'LT', 'GT', 'EQ', 'NE', 'GE', 'LE'),
+        ('left', 'DOTADD', 'DOTSUB',  '+', '-'),
+        ('left', 'DOTMUL', 'DOTDIV', '*', '/'),
+
         ('left', 'TRANSPOSE'),
         ('left', 'UMINUS'),
     )
@@ -49,7 +48,7 @@ class ParserMatrix(Parser):
     def instruction(self, p):
         return p
 
-    @_('IF "(" expr ")" instruction %prec IF',
+    @_('IF "(" expr ")" instruction %prec IFX',
        'IF "(" expr ")" instruction ELSE instruction')
     def if_i(self, p):
         return p
