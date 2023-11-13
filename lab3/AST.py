@@ -50,7 +50,7 @@ class BreakStatement(Node):
         print("BREAK")
 
 class ContinueStatement(Node):
-    def printTree(self, indent):
+    def printTree(self, i):
         self.indentation(i)
         print("CONTINUE")
 
