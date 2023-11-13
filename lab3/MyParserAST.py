@@ -58,7 +58,6 @@ class ParserMatrixAST(Parser):
     def if_i(self, p):
         return IfStatement(p[2], Instructions(p[4])) if len(p) == 5 else IfStatement(p[2], Instructions(p[4]), Instructions(p[6]))
 
-
     @_('WHILE "(" expr ")" instruction' )
     def while_l(self, p):
         return WhileLoop(p[2], Instructions(p[4]))
@@ -67,12 +66,10 @@ class ParserMatrixAST(Parser):
     def for_l(self, p):
         return ForLoop(Id(p[1]), p[3], p[5], Instructions(p[6]))
 
-
     @_('RETURN',
        'RETURN expr')
     def return_i(self, p):
         return ReturnStatement(p[1]) if len(p) == 2 else ReturnStatement()
-
 
     @_('PRINT printargs')
     def print_i(self, p):
@@ -82,7 +79,6 @@ class ParserMatrixAST(Parser):
         'expr')
     def printargs(self, p):
         return [p[0]] + p[2] if len(p) == 3 else [p[0]]
-
 
     @_('STRING')
     def expr(self, p):
@@ -103,7 +99,7 @@ class ParserMatrixAST(Parser):
     def expr(self, p):
         return p[1]
 
-    @_('lists')
+    @_('arg')
     def var(self, p):
         return p[0]
 
@@ -112,7 +108,7 @@ class ParserMatrixAST(Parser):
         return Id(p[0])
 
     @_('ID "[" expr "," expr "]"')
-    def lists(self, p):
+    def arg(self, p):
         return Variable(Id(p[0]), (p[2], p[4]))
 
     @_('var "=" expr',
