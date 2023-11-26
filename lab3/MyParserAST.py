@@ -2,7 +2,7 @@ from sly import Parser
 import sys
 sys.path.append('c:/Users/iwosz/PythonProjects/CompilationTheory/') 
 from lab1.MyLexer import MyLexer as Scanner
-from AST import *
+from lab3.AST import *
 
 class ParserMatrixAST(Parser):
 
@@ -26,11 +26,11 @@ class ParserMatrixAST(Parser):
 
     @_('instructions')
     def instructions_or_empty(self, p):
-        return Instructions(p[0])
+        return Instructions(p[0], lineno=p.lineno)
 
     @_('')
     def instructions_or_empty(self, p):
-        return Instructions()
+        return Instructions('')
 
     @_('instructions instruction',
        'instruction')
@@ -39,15 +39,21 @@ class ParserMatrixAST(Parser):
 
     @_('if_i',
        'return_i ";"',
-       'BREAK ";"',
-       'CONTINUE ";"',
        'for_l',
        'while_l',
        'assign ";"',
        'print_i ";"')
     def instruction(self, p):
         return [p[0]]
-    
+
+    @_('BREAK ";"')
+    def instruction(self, p):
+        return [BreakStatement(lineno=p.lineno)]
+
+    @_("CONTINUE ';'")
+    def instruction(self, p):
+        return [ContinueStatement(lineno=p.lineno)]
+
     @_('"{" instructions "}"')
     def instruction(self, p):
         return p[1]
@@ -55,24 +61,24 @@ class ParserMatrixAST(Parser):
     @_('IF "(" expr ")" instruction %prec IFX',
        'IF "(" expr ")" instruction ELSE instruction')
     def if_i(self, p):
-        return IfStatement(p[2], Instructions(p[4])) if len(p) == 5 else IfStatement(p[2], Instructions(p[4]), Instructions(p[6]))
+        return IfStatement(p[2], Instructions(p[4]), Instructions(p[6]) if len(p) == 7 else None, lineno=p.lineno)
 
     @_('WHILE "(" expr ")" instruction' )
     def while_l(self, p):
-        return WhileLoop(p[2], Instructions(p[4]))
+        return WhileLoop(p[2], Instructions(p[4]), lineno=p.lineno)
 
-    @_('FOR ID "=" expr ":" expr instruction')
+    @_('FOR var "=" expr ":" expr instruction')
     def for_l(self, p):
-        return ForLoop(Id(p[1]), p[3], p[5], Instructions(p[6]))
+        return ForLoop(Variable(p[1]), p[3], p[5], Instructions(p[6]), lineno=p.lineno)
 
     @_('RETURN',
        'RETURN expr')
     def return_i(self, p):
-        return ReturnStatement(p[1]) if len(p) == 2 else ReturnStatement()
+        return ReturnStatement(p[1] if len(p) == 2 else None, lineno=p.lineno)
 
     @_('PRINT printargs')
     def print_i(self, p):
-        return PrintStatement(p[1])
+        return PrintStatement(p[1], lineno=p.lineno)
 
     @_('expr "," printargs',
         'expr')
@@ -81,15 +87,15 @@ class ParserMatrixAST(Parser):
 
     @_('STRING')
     def expr(self, p):
-        return StringLiteral(p[0])
+        return StringLiteral(p[0], lineno=p.lineno)
 
     @_('INTNUM')
     def expr(self, p):
-        return IntNum(p[0])
+        return IntNum(p[0], lineno=p.lineno)
 
     @_('FLOAT')
     def expr(self, p):
-        return Float(p[0])
+        return Float(p[0], lineno=p.lineno)
 
     @_('var')
     def expr(self, p):
@@ -106,9 +112,9 @@ class ParserMatrixAST(Parser):
     def var(self, p):
         return Id(p[0])
 
-    @_('ID "[" expr "," expr "]"')
+    @_('ID "[" mat_fun_args "]"')
     def arg(self, p):
-        return Variable(Id(p[0]), (p[2], p[4]))
+        return Variable(Id(p[0]), p[2], lineno=p.lineno)
 
     @_('var "=" expr',
        'var ADDASSIGN expr',
@@ -116,16 +122,16 @@ class ParserMatrixAST(Parser):
        'var MULASSIGN expr',
        'var DIVASSIGN expr')
     def assign(self, p):
-        return Assignment(p[0], p[1], p[2])
+        return Assignment(p[0], p[1], p[2], lineno=p.lineno)
 
     @_('"-" expr %prec UMINUS',
         '''expr "'" %prec TRANSPOSE''')
     def expr(self, p):
-        return UnaryExpression(p[1], p[0])
+        return UnaryExpression(p[1], p[0], lineno=p.lineno)
 
-    @_('matrix')
-    def expr(self, p):
-        return p[0]
+    # @_('matrix')
+    # def expr(self, p):
+    #     return p[0]
 
     @_('expr "+" expr',
        'expr "-" expr',
@@ -145,37 +151,31 @@ class ParserMatrixAST(Parser):
        'expr DOTSUB expr',
        )
     def expr(self, p):
-        return BinaryExpression(p[0], p[1], p[2])
+        return BinaryExpression(p[0], p[1], p[2], lineno=p.lineno)
 
 
-
-    @_('"[" vectors "]"')
-    def matrix(self, p):
-        return Matrix(p[1])
-
-    @_('vectors "," vector',
-       'vector')
-    def vectors(self, p):
-        return p[0] + [p[2]] if len(p) == 3 else [p[0]]
+    @_('vector')
+    def expr(self, p):
+        return p[0]
 
     @_('"[" variables "]"')
     def vector(self, p):
-        return p[1]
+        return Vector(p[1], lineno=p.lineno)
 
 
-    @_('variables "," variable',
-       'variable')
+    @_('variables "," expr',
+       'expr')
     def variables(self, p):
-        return  p[0] + [p[2]] if len(p) == 3 else [p[0]]
+        return p[0] + [p[2]] if len(p) == 3 else [p[0]]
 
-    @_('expr')
-    def variable(self, p):
-        return p[0]
-
-
-    @_('mat_fun "(" expr ")"')
+    @_('mat_fun "(" mat_fun_args  ")"')
     def expr(self, p):
-        return MatFun(p[0], p[2])
+        return MatFun(p[0], p[2], lineno=p.lineno)
+
+    @_('mat_fun_args "," expr', 
+       "expr")
+    def mat_fun_args(self, p):
+        return [p[0]] if len(p) == 1 else p[0] + [p[2]]
 
 
     @_('ZEROS',

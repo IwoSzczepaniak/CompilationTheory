@@ -46,8 +46,8 @@ class MyLexer(Lexer):
     ID['else'] = ELSE
     ID['for'] = FOR
     ID['while'] = WHILE
-    ID['break'] = BREAK
-    ID['continue'] = CONTINUE
+    ID['BREAK'] = BREAK
+    ID['CONTINUE'] = CONTINUE
     ID['return'] = RETURN
     ID['eye'] = EYE
     ID['zeros'] = ZEROS
