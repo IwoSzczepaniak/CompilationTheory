@@ -125,20 +125,20 @@ class TypeChecker(NodeVisitor):
                 node.v_type = self.symbol_table.get_v_type(node.left.id)
             elif isinstance(node.left, AST.BinaryExpression):
                 left_dims = node.left.dims
-            # else:
-                # print(f"Error in visit_BinaryExpression {node.left} {type1} {type2}")
-                # return
+            else:
+                print(f"Error in visit_BinaryExpression {node.left} {type1} {type2}")
+                return
             if isinstance(node.right, AST.Id) or 1:
                 right_dims = self.symbol_table.get_v_dims(node.right.id)
                 node.v_type = self.symbol_table.get_v_type(node.left.id)
             elif isinstance(node.right, AST.BinaryExpression):
                 right_dims = node.right.dims
-            # else:
-            #     print("Error in visit_BinaryExpression")
-            #     return
+            else:
+                print("Error in visit_BinaryExpression")
+                return
             for i in range(len(right_dims)):
                 if left_dims[i] != right_dims[i]:
-                    if left_dims[0].intnum != right_dims[0].intnum:
+                    if hasattr(left_dims[0], 'intnum') and left_dims[0].intnum != right_dims[0].intnum:
                         print(f"Line nr:{node.lineno} - Nonequal vector dim -", left_dims[0].intnum, right_dims[0].intnum)
                     return None
             node.dims = left_dims
@@ -267,7 +267,7 @@ class TypeChecker(NodeVisitor):
         dims = self.symbol_table.v_dims[node.id.id]
 
         if len(dims) != len(node.index):
-            print(f"Line nr:{node.lineno} - Vector sizes not good")
+            print(f"Line nr:{node.lineno} - Trying to access non-existing dimension")
             return None
 
         for i in range(len(node.index)):

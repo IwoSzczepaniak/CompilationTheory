@@ -48,6 +48,8 @@ class MyLexer(Lexer):
     ID['while'] = WHILE
     ID['BREAK'] = BREAK
     ID['CONTINUE'] = CONTINUE
+    ID['break'] = BREAK
+    ID['continue'] = CONTINUE
     ID['return'] = RETURN
     ID['eye'] = EYE
     ID['zeros'] = ZEROS

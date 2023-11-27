@@ -108,9 +108,6 @@ class Vector(Node):
         self.dims = [len(vector)]
         self.v_type = None
 
-        print(vector)
-        print(type(vector[0]))
-
         if isinstance(vector[0], Vector):
             self.dims += vector[0].dims
         elif isinstance(vector[0], list):
@@ -129,6 +126,3 @@ class Vector(Node):
             self.v_type = 'float'
         if isinstance(cd, StringLiteral):
             self.v_type = 'str'
-
-    def __repr__(self):
-        return f"[{self.vector}], {self.dims}, {self.v_type}, {self.lineno}"
