@@ -2,75 +2,7 @@ import sys
 sys.path.append('c:/Users/iwosz/PythonProjects/CompilationTheory/') 
 import lab3.AST as AST
 
-from collections import defaultdict
 from SymbolTable import SymbolTable, VariableSymbol
-
-super_huge_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
-
-super_huge_dict["+"]["int"]["int"] = "int"
-super_huge_dict["+"]["int"]["float"] = "float"
-super_huge_dict["+"]["float"]["int"] = "float"
-super_huge_dict["+"]["float"]["float"] = "float"
-super_huge_dict["+"]["str"]["str"] = "str"
-super_huge_dict["+"]["vector"]["vector"] = "vector"
-
-super_huge_dict["-"]["int"]["int"] = "int"
-super_huge_dict["-"]["int"]["float"] = "float"
-super_huge_dict["-"]["float"]["int"] = "float"
-super_huge_dict["-"]["float"]["float"] = "float"
-super_huge_dict["-"]["str"]["str"] = "str"
-super_huge_dict["-"]["vector"]["vector"] = "vector"
-
-super_huge_dict["*"]["int"]["int"] = "int"
-super_huge_dict["*"]["int"]["float"] = "float"
-super_huge_dict["*"]["float"]["int"] = "float"
-super_huge_dict["*"]["float"]["float"] = "float"
-super_huge_dict["*"]["str"]["str"] = "str"
-super_huge_dict["*"]["vector"]["vector"] = "vector"
-
-super_huge_dict["/"]["int"]["int"] = "int"
-super_huge_dict["/"]["int"]["float"] = "float"
-super_huge_dict["/"]["float"]["int"] = "float"
-super_huge_dict["/"]["float"]["float"] = "float"
-super_huge_dict["/"]["vector"]["vector"] = "vector"
-
-
-super_huge_dict[">"]["int"]["int"] = "bool"
-super_huge_dict[">"]["int"]["float"] = "bool"
-super_huge_dict[">"]["float"]["int"] = "bool"
-super_huge_dict[">"]["float"]["float"] = "bool"
-
-super_huge_dict["<"]["int"]["int"] = "bool"
-super_huge_dict["<"]["int"]["float"] = "bool"
-super_huge_dict["<"]["float"]["int"] = "bool"
-super_huge_dict["<"]["float"]["float"] = "bool"
-
-super_huge_dict[">="]["int"]["int"] = "bool"
-super_huge_dict[">="]["int"]["float"] = "bool"
-super_huge_dict[">="]["float"]["int"] = "bool"
-super_huge_dict[">="]["float"]["float"] = "bool"
-
-super_huge_dict["<="]["int"]["int"] = "bool"
-super_huge_dict["<="]["int"]["float"] = "bool"
-super_huge_dict["<="]["float"]["int"] = "bool"
-super_huge_dict["<="]["float"]["float"] = "bool"
-
-super_huge_dict["=="]["int"]["int"] = "bool"
-super_huge_dict["=="]["int"]["float"] = "bool"
-super_huge_dict["=="]["float"]["int"] = "bool"
-super_huge_dict["=="]["float"]["float"] = "bool"
-
-super_huge_dict["!="]["int"]["int"] = "bool"
-super_huge_dict["!="]["int"]["float"] = "bool"
-super_huge_dict["!="]["float"]["int"] = "bool"
-super_huge_dict["!="]["float"]["float"] = "bool"
-
-super_huge_dict[".+"]["vector"]["vector"] = "vector"
-super_huge_dict[".-"]["vector"]["vector"] = "vector"
-super_huge_dict[".*"]["vector"]["vector"] = "vector"
-super_huge_dict["./"]["vector"]["vector"] = "vector"
-
-
 
 class NodeVisitor(object):
     def __init__(self):
@@ -96,7 +28,99 @@ class NodeVisitor(object):
                 elif isinstance(child, AST.Node):
                     self.visit(child)
 
+
+class TypeCheckerHelper:
+    def __init__(self):
+        self.operations = {}
+
+    def add_operation(self, op, type1, type2, result_type):
+        self.operations[op] = self.operations.get(op, {})
+        self.operations[op][type1] = self.operations[op].get(type1, {})
+        self.operations[op][type1][type2] = result_type
+
+    def check_types(self, op, type1, type2, lineno):
+        if op in self.operations and type1 in self.operations[op] and type2 in self.operations[op][type1]:
+            return self.operations[op][type1][type2]
+        else:
+            print(f"Line nr:{lineno} - Type error: {type1} {op} {type2} is not correct")
+            return None
+
+
 class TypeChecker(NodeVisitor):
+    def __init__(self):
+        super().__init__()
+        self.type_checker_helper = TypeCheckerHelper()
+
+        operations = [
+            ["+", "int", "int", "int"],
+            ["+", "int", "float", "float"],
+            ["+", "float", "int", "float"],
+            ["+", "float", "float", "float"],
+            ["+", "str", "str", "str"],
+            ["+", "vector", "vector", "vector"],
+            
+            ["-", "int", "int", "int"],
+            ["-", "int", "float", "float"],
+            ["-", "float", "int", "float"],
+            ["-", "float", "float", "float"],
+            ["-", "vector", "vector", "vector"],
+
+            ["*", "int", "int", "int"],
+            ["*", "int", "float", "float"],
+            ["*", "float", "int", "float"],
+            ["*", "float", "float", "float"],
+            ["*", "vector", "vector", "vector"],
+
+            ["/", "int", "int", "int"],
+            ["/", "int", "float", "float"],
+            ["/", "float", "int", "float"],
+            ["/", "float", "float", "float"],
+            ["/", "vector", "vector", "vector"],
+
+            [">", "int", "int", "bool"],
+            [">", "int", "float", "bool"],
+            [">", "float", "int", "bool"],
+            [">", "float", "float", "bool"],
+
+            ["<", "int", "int", "bool"],
+            ["<", "int", "float", "bool"],
+            ["<", "float", "int", "bool"],
+            ["<", "float", "float", "bool"],
+
+            [">=", "int", "int", "bool"],
+            [">=", "int", "float", "bool"],
+            [">=", "float", "int", "bool"],
+            [">=", "float", "float", "bool"],
+
+            ["<=", "int", "int", "bool"],
+            ["<=", "int", "float", "bool"],
+            ["<=", "float", "int", "bool"],
+            ["<=", "float", "float", "bool"],
+
+            ["==", "int", "int", "bool"],
+            ["==", "int", "float", "bool"],
+            ["==", "float", "int", "bool"],
+            ["==", "float", "float", "bool"],
+            ["==", "str", "str", "bool"],
+            ["==", "vector", "vector", "bool"],
+
+            ["!=", "int", "int", "bool"],
+            ["!=", "int", "float", "bool"],
+            ["!=", "float", "int", "bool"],
+            ["!=", "float", "float", "bool"],
+            ["!=", "str", "str", "bool"],
+            ["!=", "vector", "vector", "bool"],
+
+            [".+", "vector", "vector", "vector"],
+            [".-", "vector", "vector", "vector"],
+            [".*", "vector", "vector", "vector"],
+            ["./", "vector", "vector", "vector"]
+        ]
+        
+        for op, type1, type2, result_type in operations:
+            self.type_checker_helper.add_operation(op, type1, type2, result_type)
+
+
 
     def visit_InstructionsOrEmpty(self, node: AST.InstructionsOrEmpty):
         self.visit(node.instructions)
@@ -115,7 +139,10 @@ class TypeChecker(NodeVisitor):
         type1 = self.visit(node.left)
         type2 = self.visit(node.right)
         op = node.op
-        if super_huge_dict[op][type1][type2] == "":
+
+        result_type = self.type_checker_helper.check_types(op, type1, type2, node.lineno)
+
+        if result_type is None:
             print(f"Line nr:{node.lineno} - Type error: {type1} {op} {type2} is not correct")
             return None
 
@@ -142,7 +169,7 @@ class TypeChecker(NodeVisitor):
                         print(f"Line nr:{node.lineno} - Nonequal vector dim -", left_dims[0].intnum, right_dims[0].intnum)
                     return None
             node.dims = left_dims
-        return super_huge_dict[op][type1][type2]
+        return result_type
 
 
     def visit_IfStatement(self, node: AST.IfStatement):
@@ -219,8 +246,9 @@ class TypeChecker(NodeVisitor):
                         print(f"Line nr:{node.lineno} - wrong dimensions")
                         return None
 
-            if super_huge_dict[node.op][var_type][val_type] != '':
-                return super_huge_dict[node.op][var_type][val_type]
+            result_type = self.type_checker_helper.check_types(node.op[0], var_type, val_type, node.lineno)
+            if result_type is not None:
+                return result_type
             else:
                 print(f"Line nr:{node.lineno} - operation on given values is not defined")
                 return None
