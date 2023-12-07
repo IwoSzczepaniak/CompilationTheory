@@ -2,7 +2,7 @@ import sys
 sys.path.append('c:/Users/iwosz/PythonProjects/CompilationTheory/') 
 import lab3.AST as AST
 
-from SymbolTable import SymbolTable, VariableSymbol
+from lab4.SymbolTable import SymbolTable, VariableSymbol
 
 class NodeVisitor(object):
     def __init__(self):
@@ -70,6 +70,9 @@ class TypeChecker(NodeVisitor):
             ["*", "float", "int", "float"],
             ["*", "float", "float", "float"],
             ["*", "vector", "vector", "vector"],
+            ["*", "str", "int", "str"],
+            ["*", "str", "str", "int"],
+
 
             ["/", "int", "int", "int"],
             ["/", "int", "float", "float"],
@@ -139,38 +142,69 @@ class TypeChecker(NodeVisitor):
         type1 = self.visit(node.left)
         type2 = self.visit(node.right)
         op = node.op
-
-        result_type = self.type_checker_helper.check_types(op, type1, type2, node.lineno)
-
-        if result_type is None:
-            print(f"Line nr:{node.lineno} - Type error: {type1} {op} {type2} is not correct")
+        if not self.type_checker_helper.operations.get(op):
+            print(f"{node.lineno} Type error: {type1} {op} {type2} is not correct")
             return None
 
         if type1 == "vector" or type2 == "vector":
-            if isinstance(node.left, AST.Id) or 1:
+            was_l_tr = was_r_tr = False
+            if isinstance(node.left, AST.UnaryExpression):
+                if node.left.operation == "TRANSPOSE":
+                    was_l_tr = True
+                node.left = node.left.expr
+            if isinstance(node.right, AST.UnaryExpression):
+                if node.right.operation == "TRANSPOSE":
+                    was_r_tr = True
+                node.right = node.right.expr
+
+            if isinstance(node.left, AST.Id):
                 left_dims = self.symbol_table.get_v_dims(node.left.id)
                 node.v_type = self.symbol_table.get_v_type(node.left.id)
             elif isinstance(node.left, AST.BinaryExpression):
                 left_dims = node.left.dims
+            elif isinstance(node.left, AST.Vector):
+                left_dims = node.left.dims
             else:
-                print(f"Error in visit_BinaryExpression {node.left} {type1} {type2}")
-                return
-            if isinstance(node.right, AST.Id) or 1:
+                print("Error in visit_BinExpr")
+                print(node.left)
+                exit()
+            if was_l_tr:
+                left_dims = left_dims[::-1]
+
+            if isinstance(node.right, AST.Id):
                 right_dims = self.symbol_table.get_v_dims(node.right.id)
                 node.v_type = self.symbol_table.get_v_type(node.left.id)
             elif isinstance(node.right, AST.BinaryExpression):
                 right_dims = node.right.dims
+            elif isinstance(node.right, AST.Vector):
+                right_dims = node.right.dims
             else:
-                print("Error in visit_BinaryExpression")
-                return
+                print("Error in visit_BinExpr")
+                print(node.left, node.right)
+                exit()
+            if was_r_tr:
+                right_dims = right_dims[::-1]
+
+            if len(right_dims) != len(left_dims):
+                print(f"{node.lineno} Nonequal vector dim")
+                return None
+
             for i in range(len(right_dims)):
-                if left_dims[i] != right_dims[i]:
-                    if hasattr(left_dims[0], 'intnum') and left_dims[0].intnum != right_dims[0].intnum:
-                        print(f"Line nr:{node.lineno} - Nonequal vector dim -", left_dims[0].intnum, right_dims[0].intnum)
+                if isinstance(left_dims[i], AST.IntNum):
+                    ldi = left_dims[i].intnum
+                else:
+                    ldi = left_dims[i]
+                if isinstance(right_dims[i], AST.IntNum):
+                    rdi = right_dims[i].intnum
+                else:
+                    rdi = right_dims[i]
+
+                if ldi != rdi:
+                    print(f"{node.lineno} Nonequal vector dim")
                     return None
             node.dims = left_dims
-        return result_type
 
+        return self.type_checker_helper.operations[op][type1][type2]
 
     def visit_IfStatement(self, node: AST.IfStatement):
         self.symbol_table = self.symbol_table.pushScope("if")
@@ -205,7 +239,10 @@ class TypeChecker(NodeVisitor):
             self.symbol_table.put(node.id, None)
 
         else:
-            self.symbol_table.put(node.id, t1)
+            if isinstance(node.id, AST.Id):
+                self.symbol_table.put(node.id.id, t1)
+            else:
+                self.symbol_table.put(node.id, t1)
 
         self.visit(node.body)
         self.symbol_table = self.symbol_table.popScope()
@@ -306,6 +343,8 @@ class TypeChecker(NodeVisitor):
             if callable(hasattr(node.index[i], 'intnum')) and node.index[i].intnum >= dims[i].intnum:
                 print(f"Line nr:{node.lineno} - Index out of ouns")
                 return None
+            
+            
         return self.symbol_table.v_type[node.id.id]
 
     def visit_UnaryExpression(self, node: AST.UnaryExpression):

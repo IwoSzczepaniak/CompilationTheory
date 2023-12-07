@@ -4,6 +4,9 @@ class Node:
 
     def indentation(self, i):
         print(i * "|\t", end="")
+    
+    def accept(self, visitor):
+        return visitor.visit(self)
 
 
 class InstructionsOrEmpty(Node):

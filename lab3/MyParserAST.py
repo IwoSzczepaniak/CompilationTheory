@@ -67,9 +67,9 @@ class ParserMatrixAST(Parser):
     def while_l(self, p):
         return WhileLoop(p[2], Instructions(p[4]), lineno=p.lineno)
 
-    @_('FOR var "=" expr ":" expr instruction')
+    @_('FOR ID "=" expr ":" expr instruction')
     def for_l(self, p):
-        return ForLoop(Variable(p[1]), p[3], p[5], Instructions(p[6]), lineno=p.lineno)
+        return ForLoop(Id(p[1]), p[3], p[5], Instructions(p[6]), lineno=p.lineno)
 
     @_('RETURN',
        'RETURN expr')
@@ -124,10 +124,13 @@ class ParserMatrixAST(Parser):
     def assign(self, p):
         return Assignment(p[0], p[1], p[2], lineno=p.lineno)
 
-    @_('"-" expr %prec UMINUS',
-        '''expr "'" %prec TRANSPOSE''')
+    @_('''expr "'" %prec TRANSPOSE''')
     def expr(self, p):
-        return UnaryExpression(p[1], p[0], lineno=p.lineno)
+        return UnaryExpression("TRANSPOSE", p[0], lineno=p.lineno)
+
+    @_('"-" expr %prec UMINUS')
+    def expr(self, p):
+        return UnaryExpression('UMINUS', p[0], lineno=p.lineno)
 
     # @_('matrix')
     # def expr(self, p):
