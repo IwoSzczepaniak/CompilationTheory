@@ -329,6 +329,7 @@ class TypeChecker(NodeVisitor):
         return 'float'
 
     def visit_Variable(self, node: AST.Variable):
+        # TODO
         dims = self.symbol_table.v_dims[node.id.id]
 
         if len(dims) != len(node.index):

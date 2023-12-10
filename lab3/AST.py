@@ -86,6 +86,7 @@ class Id(Node):
 
 class BinaryExpression(Node):
     def __init__(self, left, op, right, lineno=None):
+        # TODO
         super().__init__(left=left, op=op, right=right, lineno=lineno)
 
 
