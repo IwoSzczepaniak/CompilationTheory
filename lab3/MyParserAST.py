@@ -72,9 +72,10 @@ class ParserMatrixAST(Parser):
         return ForLoop(Id(p[1]), p[3], p[5], Instructions(p[6]), lineno=p.lineno)
 
     @_('RETURN',
+       'RETURN var',
        'RETURN expr')
     def return_i(self, p):
-        return ReturnStatement(p[1] if len(p) == 2 else None, lineno=p.lineno)
+        return ReturnStatement(p[1], lineno=p.lineno) if len(p) == 2 else ReturnStatement(None, lineno=p.lineno)
 
     @_('PRINT printargs')
     def print_i(self, p):
@@ -115,6 +116,21 @@ class ParserMatrixAST(Parser):
     @_('ID "[" mat_fun_args "]"')
     def arg(self, p):
         return Variable(Id(p[0]), p[2], lineno=p.lineno)
+    
+    @_('mat_fun "(" mat_fun_args  ")"')
+    def expr(self, p):
+        return MatFun(p[0], p[2], lineno=p.lineno)
+
+    @_('mat_fun_args "," expr', 
+       "expr")
+    def mat_fun_args(self, p):
+        return [p[0]] if len(p) == 1 else p[0] + [p[2]]
+    
+    @_("mat_fun_args ',' expr ':' expr",
+       "expr ':' expr")
+    def mat_fun_args(self, p):
+        return [(p[0], p[2])] if len(p) == 3 else p[0] + [(p[2], p[4])]
+
 
     @_('var "=" expr',
        'var ADDASSIGN expr',
@@ -171,14 +187,6 @@ class ParserMatrixAST(Parser):
     def variables(self, p):
         return p[0] + [p[2]] if len(p) == 3 else [p[0]]
 
-    @_('mat_fun "(" mat_fun_args  ")"')
-    def expr(self, p):
-        return MatFun(p[0], p[2], lineno=p.lineno)
-
-    @_('mat_fun_args "," expr', 
-       "expr")
-    def mat_fun_args(self, p):
-        return [p[0]] if len(p) == 1 else p[0] + [p[2]]
 
 
     @_('ZEROS',
