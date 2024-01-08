@@ -172,7 +172,13 @@ class Interpreter(object):
     def visit(self, node: PrintStatement):
         to_print = [element.accept(self) for element in node.printargs]
         if to_print == [[]]:
-            to_print = [self.memory.stack[-1].memory["D"][2][1]]
+            
+            if len(node.printargs[0].index)==2:
+                to_print = [self.memory.stack[-1].memory[element.id.id][element.index[1].intnum][element.index[0].intnum] for element in node.printargs]
+            else:
+                to_print = [self.memory.stack[-1].memory[element.id.id][element.index[0].intnum] for element in node.printargs]
+
+
         print(*to_print, sep=' ')
 
     @when(Assignment)

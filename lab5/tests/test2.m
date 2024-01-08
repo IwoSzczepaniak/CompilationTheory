@@ -7,4 +7,4 @@ D = zeros(3, 4);
 D[0, 0] = 42;
 D[1, 2] = 7;
 print D;
-print D[2, 2];
+print D[1, 2];
