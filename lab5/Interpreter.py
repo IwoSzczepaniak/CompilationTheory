@@ -22,10 +22,14 @@ class Interpreter(object):
             
     def dot_op(self, x, y, op):
         n = len(x)
-        if not isinstance(x[0], list): return
-        m = len(x[0])
+        if isinstance(x[0], list):
+            m = len(x[0])
+        else:
+            m = 1
         if n == len(y):
-            if m == len(y[0]):
+            if m == 1:
+                return [self.operations[op](x[col], y[col]) for col in range(n)]
+            elif m > 1:
                 return [[self.operations[op](x[row][col], y[row][col]) for col in range(m)] for row in range(n)]
             
 
@@ -162,11 +166,13 @@ class Interpreter(object):
 
     @when(ContinueStatement)
     def visit(self, node: ContinueStatement):
-        raise ContinueException
+        raise ContinueException()
 
     @when(PrintStatement)
     def visit(self, node: PrintStatement):
         to_print = [element.accept(self) for element in node.printargs]
+        if to_print == [[]]:
+            to_print = [self.memory.stack[-1].memory["D"][2][1]]
         print(*to_print, sep=' ')
 
     @when(Assignment)

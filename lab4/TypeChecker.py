@@ -142,7 +142,6 @@ class TypeChecker(NodeVisitor):
         type1 = self.visit(node.left)
         type2 = self.visit(node.right)
         op = node.op
-
         result_type = self.type_checker_helper.check_types(op, type1, type2, node.lineno)
 
         if result_type is None:
@@ -196,6 +195,7 @@ class TypeChecker(NodeVisitor):
             self.symbol_table = self.symbol_table.popScope()
 
     def visit_ReturnStatement(self, node: AST.ReturnStatement):
+        print("hi")
         return self.visit(node.expr)
 
     def visit_BreakStatement(self, node: AST.BreakStatement):
@@ -241,13 +241,19 @@ class TypeChecker(NodeVisitor):
         left_id = node.left.id
         if node.op == '=':
 
-            self.symbol_table.put(left_id, val_type)
+            if isinstance(left_id, str):
+                self.symbol_table.put(left_id, val_type)
+            else:
+                self.symbol_table.put(left_id.id, val_type)
 
             if val_type == 'vector':
-                self.symbol_table.v_dims[left_id] = node.right.dims
-                self.symbol_table.v_type[left_id] = node.right.v_type
+                if isinstance(node.right.dims, AST.IntNum):
+                    self.symbol_table.v_dims[left_id] = node.right.dims.intnum
+                    self.symbol_table.v_type[left_id] = node.right.v_type
+                else:
+                    self.symbol_table.v_dims[left_id] = node.right.dims
+                    self.symbol_table.v_type[left_id] = node.right.v_type
         else:
-            #sprawdzić wektory wektorów
             var_type = self.symbol_table.get(left_id)
             if var_type == 'vector' and val_type == 'vector':
                 var_d = self.symbol_table.v_dims[left_id]
@@ -263,11 +269,9 @@ class TypeChecker(NodeVisitor):
                         return None
 
             result_type = self.type_checker_helper.check_types(node.op[0], var_type, val_type, node.lineno)
-            if result_type is not None:
-                return result_type
-            else:
+            if result_type is None:
                 print(f"Line nr:{node.lineno} - operation on given values is not defined")
-                return None
+            return result_type
 
         
 
@@ -308,7 +312,6 @@ class TypeChecker(NodeVisitor):
         return 'float'
 
     def visit_Variable(self, node: AST.Variable):
-        # TODO
         dims = self.symbol_table.v_dims[node.id.id]
 
         if len(dims) != len(node.index):

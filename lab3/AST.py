@@ -85,9 +85,8 @@ class Id(Node):
 
 
 class BinaryExpression(Node):
-    def __init__(self, left, op, right, lineno=None):
-        # TODO
-        super().__init__(left=left, op=op, right=right, lineno=lineno)
+    def __init__(self, left, op, right, lineno=None, dims=None, v_type=None):
+        super().__init__(left=left, op=op, right=right, lineno=lineno, dims=dims, v_type=v_type)
 
 
 class Matrix(Node):
