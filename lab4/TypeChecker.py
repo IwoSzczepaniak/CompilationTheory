@@ -155,6 +155,8 @@ class TypeChecker(NodeVisitor):
                 node.v_type = self.symbol_table.get_v_type(node.left.id)
             elif isinstance(node.left, AST.BinaryExpression):
                 left_dims = node.left.dims
+            elif isinstance(node.left, AST.Vector):
+                left_dims = node.left.dims
             else:
                 print(f"Error in visit_BinaryExpression {node.left} {type1} {type2}")
                 return
@@ -163,9 +165,16 @@ class TypeChecker(NodeVisitor):
                 node.v_type = self.symbol_table.get_v_type(node.left.id)
             elif isinstance(node.right, AST.BinaryExpression):
                 right_dims = node.right.dims
+            elif isinstance(node.right, AST.Vector):
+                right_dims = node.right.dims
             else:
                 print("Error in visit_BinaryExpression")
                 return
+            
+            if len(right_dims) != len(left_dims):
+                print(f"Line nr:{node.lineno} - Nonequal vector dimentions -", len(right_dims), len(left_dims))
+                return None
+
             for i in range(len(right_dims)):
                 if left_dims[i] != right_dims[i]:
                     if hasattr(left_dims[0], 'intnum') and left_dims[0].intnum != right_dims[0].intnum:
