@@ -142,69 +142,38 @@ class TypeChecker(NodeVisitor):
         type1 = self.visit(node.left)
         type2 = self.visit(node.right)
         op = node.op
-        if not self.type_checker_helper.operations.get(op):
-            print(f"{node.lineno} Type error: {type1} {op} {type2} is not correct")
+
+        result_type = self.type_checker_helper.check_types(op, type1, type2, node.lineno)
+
+        if result_type is None:
+            print(f"Line nr:{node.lineno} - Type error: {type1} {op} {type2} is not correct")
             return None
 
         if type1 == "vector" or type2 == "vector":
-            was_l_tr = was_r_tr = False
-            if isinstance(node.left, AST.UnaryExpression):
-                if node.left.operation == "TRANSPOSE":
-                    was_l_tr = True
-                node.left = node.left.expr
-            if isinstance(node.right, AST.UnaryExpression):
-                if node.right.operation == "TRANSPOSE":
-                    was_r_tr = True
-                node.right = node.right.expr
-
             if isinstance(node.left, AST.Id):
                 left_dims = self.symbol_table.get_v_dims(node.left.id)
                 node.v_type = self.symbol_table.get_v_type(node.left.id)
             elif isinstance(node.left, AST.BinaryExpression):
                 left_dims = node.left.dims
-            elif isinstance(node.left, AST.Vector):
-                left_dims = node.left.dims
             else:
-                print("Error in visit_BinExpr")
-                print(node.left)
-                exit()
-            if was_l_tr:
-                left_dims = left_dims[::-1]
-
+                print(f"Error in visit_BinaryExpression {node.left} {type1} {type2}")
+                return
             if isinstance(node.right, AST.Id):
                 right_dims = self.symbol_table.get_v_dims(node.right.id)
                 node.v_type = self.symbol_table.get_v_type(node.left.id)
             elif isinstance(node.right, AST.BinaryExpression):
                 right_dims = node.right.dims
-            elif isinstance(node.right, AST.Vector):
-                right_dims = node.right.dims
             else:
-                print("Error in visit_BinExpr")
-                print(node.left, node.right)
-                exit()
-            if was_r_tr:
-                right_dims = right_dims[::-1]
-
-            if len(right_dims) != len(left_dims):
-                print(f"{node.lineno} Nonequal vector dim")
-                return None
-
+                print("Error in visit_BinaryExpression")
+                return
             for i in range(len(right_dims)):
-                if isinstance(left_dims[i], AST.IntNum):
-                    ldi = left_dims[i].intnum
-                else:
-                    ldi = left_dims[i]
-                if isinstance(right_dims[i], AST.IntNum):
-                    rdi = right_dims[i].intnum
-                else:
-                    rdi = right_dims[i]
-
-                if ldi != rdi:
-                    print(f"{node.lineno} Nonequal vector dim")
+                if left_dims[i] != right_dims[i]:
+                    if hasattr(left_dims[0], 'intnum') and left_dims[0].intnum != right_dims[0].intnum:
+                        print(f"Line nr:{node.lineno} - Nonequal vector dim -", left_dims[0].intnum, right_dims[0].intnum)
                     return None
             node.dims = left_dims
+        return result_type
 
-        return self.type_checker_helper.operations[op][type1][type2]
 
     def visit_IfStatement(self, node: AST.IfStatement):
         self.symbol_table = self.symbol_table.pushScope("if")
@@ -269,6 +238,7 @@ class TypeChecker(NodeVisitor):
                 self.symbol_table.v_dims[left_id] = node.right.dims
                 self.symbol_table.v_type[left_id] = node.right.v_type
         else:
+            #sprawdzić wektory wektorów
             var_type = self.symbol_table.get(left_id)
             if var_type == 'vector' and val_type == 'vector':
                 var_d = self.symbol_table.v_dims[left_id]
