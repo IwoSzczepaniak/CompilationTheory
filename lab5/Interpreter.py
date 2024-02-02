@@ -51,6 +51,7 @@ class Interpreter(object):
             '.-': lambda x, y: self.dot_op(x, y, "-"),
             '.*': lambda x, y: self.dot_mult(x, y),
             './': lambda x, y: self.dot_mult(x, np.linalg.inv(y).tolist())
+            # duży koszt odwracanaia macierzy
         }        
 
 
@@ -105,13 +106,16 @@ class Interpreter(object):
     def visit(self, node: IfStatement):
         condition = node.cond.accept(self)
         if condition:
-            self.memory.push('if')
-            if isinstance(node.if_body, Instructions):
-                node.if_body.accept(self)
-            else:
-                for instruction in node.if_body:
-                    instruction.accept(self)
-            self.memory.pop()
+            try:
+                self.memory.push('if')
+                if isinstance(node.if_body, Instructions):
+                    node.if_body.accept(self)
+                else:
+                    for instruction in node.if_body:
+                        instruction.accept(self)
+            finally:
+                self.memory.pop()
+            
         else:
             if node.else_body is not None:
                 self.memory.push('else')
@@ -121,18 +125,15 @@ class Interpreter(object):
     @when(WhileLoop)
     def visit(self, node: WhileLoop):
         self.memory.push("while")
-        while node.cond.accept(self):
-            try:
+        try:
+            while node.cond.accept(self):
                 if isinstance(node.body, list):
                     for instruction in node.body:
                         instruction.accept(self)
                 else:
                     node.body.accept(self)
-            except ContinueException:
-                continue
-            except BreakException:
-                break
-        self.memory.pop()
+        finally:
+            self.memory.pop()
 
     @when(ForLoop)
     def visit(self, node: ForLoop):
@@ -141,20 +142,16 @@ class Interpreter(object):
         end = node.cond_end.accept(self)
         self.memory.push("for")
         self.memory.set(iterator.id, start)
-        while self.memory.get(iterator.id) <= end:
-            try:
+        try:
+            while self.memory.get(iterator.id) <= end:
                 if isinstance(node.body, list):
                     for instruction in node.body:
                         instruction.accept(self)
                 else:
                     node.body.accept(self)
-            except ContinueException:
-                continue
-            except BreakException:
-                break
-            finally:
                 self.memory.set(iterator.id, self.memory.get(iterator.id) + 1)
-        self.memory.pop()
+        finally:
+            self.memory.pop()
 
     @when(ReturnStatement)
     def visit(self, node: ReturnStatement):
@@ -186,7 +183,7 @@ class Interpreter(object):
         if not isinstance(node.left, Variable):
             if node.op == '=':
                 self.memory.set(node.left.id, node.right.accept(self))
-            else:
+            else: # lepiej podać explicite
                 self.memory.set(node.left.id, self.operations[node.op[0]](self.memory.get(node.left.id), node.right.accept(self)))
         else:
             matrix = self.memory.get(node.left.id.id)
@@ -239,7 +236,6 @@ class Interpreter(object):
         elif func == 'eye':
             if len(args) == 2:
                 return [[1 if i == j else 0 for i in range(args[0])] for j in range(args[0])]
-            else:
-                return [1 for _ in range(args[0])]
+
 
 
